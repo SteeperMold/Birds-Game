@@ -60,7 +60,6 @@ class BirdsGame:
 
     def loop(self):
         while self.state_machine.state != GameState.QUITTING:
-            print(self.state_machine.state)
             if self.state_machine.state == GameState.MAIN_MENU:
                 self.main_menu.loop()
             elif self.state_machine.state == GameState.MAIN_LEVEL_PLAYING:
@@ -69,4 +68,7 @@ class BirdsGame:
                 pass
             elif self.state_machine.state == GameState.RECORDS_TABLE_MENU:
                 pass
+
+            self.all_sprites.draw(self.screen)
+            pygame.display.flip()
         pygame.quit()

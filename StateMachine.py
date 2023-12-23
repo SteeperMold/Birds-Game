@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from enum import Enum
 
 
@@ -22,13 +22,15 @@ class StateError(Exception):
 
 @dataclass
 class StateMachine:
-    state: GameState
+    state: GameState = field(default=GameState.UNKNOWN)
 
     def set_state(self, new_state):
         self.state = new_state
 
     def assert_state_is(self, *expected_states: GameState):
-        """Проверяет, находится ли игра в одом из `expected_states`. В противном случае вызывает `StateError`."""
+        """
+        Проверяет, находится ли игра в одом из `expected_states`. В противном случае вызывает `StateError`.
+        """
 
         if self.state not in expected_states:
             raise StateError(f"Игра должна быть в одном из {expected_states}, а не {self.state}")

@@ -18,8 +18,7 @@ class GameLoop:
             self.init()
             self.initialized = True
 
-        while self.state != GameState.QUITTING:
-            self.handle_events()
+        self.handle_events()
 
     def handle_events(self):
         for event in pygame.event.get():
@@ -69,8 +68,7 @@ class MainMenuLoop(GameLoop):
         GameNameSprite(self.all_sprites, x=420, y=10)
 
     def handle_event(self, event):
-        self.all_sprites.draw(self.screen)
-        pygame.display.flip()
+        pass
 
 
 class MainGameLoop(GameLoop):
