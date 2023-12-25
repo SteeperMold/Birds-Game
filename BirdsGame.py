@@ -69,6 +69,4 @@ class BirdsGame:
             elif self.state_machine.state == GameState.RECORDS_TABLE_MENU:
                 pass
 
-            self.all_sprites.draw(self.screen)
-            pygame.display.flip()
         pygame.quit()
