@@ -66,21 +66,46 @@ class GameLoop:
 
 
 class MainMenuLoop(GameLoop):
+    def __init__(self, game):
+        super().__init__(game)
+        self.play_btn = None
+        self.bird_mode_btn = None
+        self.records_btn = None
+        self.exit_menu_btn = None
+
     def start(self):
         import Sprites
         self.all_sprites.empty()
         Sprites.MainMenuBackground(self.all_sprites)
-        Sprites.CloudsSprite(self.all_sprites, x=150, y=120)
-        Sprites.PlayerSprite(self.all_sprites, x=100, y=300)
+        Sprites.CloudsSprite(self.all_sprites, x=140, y=120)
+        Sprites.PlayerSprite(self.all_sprites, x=90, y=300)
         Sprites.BirdSprite(self.all_sprites, x=960, y=200)
-        Sprites.GameNameSprite(self.all_sprites, x=420, y=10)
+        Sprites.GameNameSprite(self.all_sprites, x=364, y=10)
+
+        self.play_btn = Sprites.PlayButton(self.all_sprites, x=370, y=250)
+        self.bird_mode_btn = Sprites.BirdModeButton(self.all_sprites, x=370, y=370)
+        self.records_btn = Sprites.RecordsButton(self.all_sprites, x=370, y=490)
+        self.exit_menu_btn = Sprites.ExitMenuButton(self.all_sprites, x=370, y=610)
 
     def update(self):
         self.all_sprites.draw(self.screen)
         pygame.display.flip()
 
     def handle_event(self, event):
-        pass  # TODO обработка кнопок
+        if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+            mouse_pos = pygame.mouse.get_pos()
+
+            if self.play_btn.rect.collidepoint(mouse_pos):
+                self.set_state(GameState.MAIN_LEVEL_PLAYING)
+
+            elif self.bird_mode_btn.rect.collidepoint(mouse_pos):
+                self.set_state(GameState.IM_A_BIRD_LEVEL_PLAYING)
+
+            elif self.records_btn.rect.collidepoint(mouse_pos):
+                self.set_state(GameState.RECORDS_TABLE_MENU)
+
+            elif self.exit_menu_btn.rect.collidepoint(mouse_pos):
+                self.set_state(GameState.QUITTING)
 
 
 class MainGameLoop(GameLoop):

@@ -79,3 +79,19 @@ class CloudsSprite(BaseSprite):
 
 class BirdSprite(BaseSprite):
     image = load_image("bird.png")
+
+
+class PlayButton(BaseSprite):
+    image = load_image("play_btn.png")
+
+
+class BirdModeButton(BaseSprite):
+    image = load_image("bird_mode_btn.png")
+
+
+class ExitMenuButton(BaseSprite):
+    image = load_image("exit_btn.png")
+
+
+class RecordsButton(BaseSprite):
+    image = load_image("records_btn.png")
