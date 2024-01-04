@@ -27,6 +27,8 @@ class BirdsGame:
 
     main_menu: GameLoops.MainMenuLoop = field(init=False, default=None)
     main_level: GameLoops.MainGameLoop = field(init=False, default=None)
+    game_over: GameLoops.GameOver = field(init=False, default=None)
+    pause_menu: GameLoops.PauseMenu = field(init=False, default=None)
 
     @classmethod
     def create(cls, fullscreen=False):
@@ -40,8 +42,11 @@ class BirdsGame:
     def init(self):
         self.main_menu = GameLoops.MainMenuLoop(game=self)
         self.main_level = GameLoops.MainGameLoop(game=self)
+        self.game_over = GameLoops.GameOver(game=self)
+        self.pause_menu = GameLoops.PauseMenu(game=self)
 
-        self.state_machine = StateMachine(self.main_menu, self.main_level, GameState.INITIALIZING)
+        self.state_machine = StateMachine(self.main_menu, self.main_level, self.game_over, self.pause_menu,
+                                          GameState.INITIALIZING)
 
         pygame.init()
         window_style = pygame.FULLSCREEN if self.fullscreen else 0
@@ -82,5 +87,9 @@ class BirdsGame:
                 pass
             elif self.state_machine.state == GameState.RECORDS_TABLE_MENU:
                 pass
+            elif self.state_machine.state == GameState.GAME_OVER:
+                self.game_over.loop()
+            elif self.state_machine.state == GameState.PAUSE_MENU:
+                self.pause_menu.loop()
 
         pygame.quit()

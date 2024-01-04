@@ -220,3 +220,35 @@ class ExitMenuButton(BaseSprite):
 
 class RecordsButton(BaseSprite):
     image = load_image("records_btn.png")
+
+
+class PauseBackground(BaseSprite):
+    image = load_image("pause_background.png")
+
+
+class GameOverBackground(BaseSprite):
+    image = load_image("game_over_background.png")
+
+
+class RestartButton(BaseSprite):
+    image = load_image("restart_btn.png")
+
+
+class PauseDarkBackground(BaseSprite):
+    image = load_image("pause_dark_background.png")
+
+
+class GameOverText(BaseSprite):
+    image = load_image("game_over_text.png")
+
+
+class YouGotPoints(BaseSprite):
+    image = load_image("you_got_points.png")
+
+
+class ReturnToMainMenuButton(BaseSprite):
+    image = load_image("return_to_main_menu_btn.png")
+
+
+class ContinuationButton(BaseSprite):
+    image = load_image("continuation_btn.png")

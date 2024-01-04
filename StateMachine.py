@@ -12,6 +12,8 @@ class GameState(Enum):
     IM_A_BIRD_LEVEL_PLAYING = "im_a_bird_level_playing"
     RECORDS_TABLE_MENU = "records_table_menu"
     QUITTING = "quitting"
+    GAME_OVER = "game_over"
+    PAUSE_MENU = "pause_menu"
 
 
 class StateError(Exception):
@@ -25,6 +27,8 @@ class StateError(Exception):
 class StateMachine:
     main_menu_loop: Any
     main_game_loop: Any
+    game_over_loop: Any
+    pause_menu_loop: Any
     state: GameState = field(default=GameState.UNKNOWN)
     previous_states: Set[GameState] = field(init=False, default_factory=set)
 
@@ -34,6 +38,10 @@ class StateMachine:
                 self.main_menu_loop.reset()
             elif new_state == GameState.MAIN_LEVEL_PLAYING:
                 self.main_game_loop.reset()
+            elif new_state == GameState.GAME_OVER:
+                self.game_over_loop.reset()
+            elif new_state == GameState.PAUSE_MENU:
+                self.pause_menu_loop.reset()
         self.state = new_state
         self.previous_states.add(new_state)
 

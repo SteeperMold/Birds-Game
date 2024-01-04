@@ -145,7 +145,6 @@ class MainGameLoop(GameLoop):
         self.health = 0
         self.score = 0
         self.bullets = 0
-        self.game_over = False
         self.player = None
         self.heart_sprites = None
         self.font = None
@@ -161,7 +160,6 @@ class MainGameLoop(GameLoop):
         self.health = 3
         self.score = 0
         self.bullets = 5
-        self.game_over = False
         self.font = pygame.font.Font(None, 70)
 
         self.all_sprites.empty()
@@ -174,9 +172,7 @@ class MainGameLoop(GameLoop):
 
     def update(self):
         self.screen.fill("#88b0ed")
-
-        if not self.game_over:
-            self.all_sprites.update()
+        self.all_sprites.update()
 
         score_text = self.font.render(f'{self.score}', True, '#ffe7bd')
         self.screen.blit(score_text, (self.width - score_text.get_width() - 20, 20))
@@ -190,7 +186,7 @@ class MainGameLoop(GameLoop):
             self.heart_sprites.pop().kill()
 
             if self.health == 0:
-                self.game_over = True
+                self.set_state(GameState.GAME_OVER)
 
         if pygame.sprite.spritecollide(self.player, self.bullet_booster_sprites, True, pygame.sprite.collide_mask):
             self.bullets += 1
@@ -218,6 +214,8 @@ class MainGameLoop(GameLoop):
                 x=self.player.rect.centerx + 80, y=self.player.rect.centery - 23,
                 birds_sprite_group=self.birds_sprites
             )
+        elif event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
+            self.set_state(GameState.PAUSE_MENU)
 
         elif event.type == CustomEvents.OBSTACLE_SPAWN:
             if random.randint(0, 100) <= 10:
@@ -254,5 +252,65 @@ class MainGameLoop(GameLoop):
         elif event.type == CustomEvents.DIFFICULTY_CHANGE:
             self.difficulty = min(self.difficulty + 1, 100)
 
-        elif event.type == CustomEvents.ADD_SCORE and not self.game_over:
+        elif event.type == CustomEvents.ADD_SCORE:
             self.score += 1
+
+
+class GameOver(GameLoop):
+    def __init__(self, game):
+        super().__init__(game)
+        self.main_menu_btn = None
+        self.restart_btn = None
+
+    def start(self):
+        import Sprites
+        Sprites.PauseDarkBackground(self.all_sprites)
+        Sprites.GameOverBackground(self.all_sprites, x=240, y=60)
+        Sprites.GameOverText(self.all_sprites, x=390, y=70)
+        Sprites.YouGotPoints(self.all_sprites, x=330, y=160)
+
+        self.restart_btn = Sprites.RestartButton(self.all_sprites, x=670, y=300)
+        self.main_menu_btn = Sprites.ReturnToMainMenuButton(self.all_sprites, x=270, y=300)
+
+    def update(self):
+        self.all_sprites.draw(self.screen)
+        pygame.display.flip()
+
+    def handle_event(self, event):
+        if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+            mouse_pos = pygame.mouse.get_pos()
+
+            if self.restart_btn.rect.collidepoint(mouse_pos):
+                self.set_state(GameState.MAIN_LEVEL_PLAYING)
+
+            elif self.main_menu_btn.rect.collidepoint(mouse_pos):
+                self.set_state(GameState.MAIN_MENU)
+
+
+class PauseMenu(GameLoop):
+    def __init__(self, game):
+        super().__init__(game)
+        self.continuation_btn = None
+        self.main_menu_btn = None
+
+    def start(self):
+        import Sprites
+        Sprites.PauseDarkBackground(self.all_sprites)
+        Sprites.PauseBackground(self.all_sprites, x=240, y=60)
+
+        self.continuation_btn = Sprites.ContinuationButton(self.all_sprites, x=670, y=180)
+        self.main_menu_btn = Sprites.ReturnToMainMenuButton(self.all_sprites, x=270, y=180)
+
+    def update(self):
+        self.all_sprites.draw(self.screen)
+        pygame.display.flip()
+
+    def handle_event(self, event):
+        if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+            mouse_pos = pygame.mouse.get_pos()
+
+            if self.continuation_btn.rect.collidepoint(mouse_pos):
+                pass
+
+            elif self.main_menu_btn.rect.collidepoint(mouse_pos):
+                self.set_state(GameState.MAIN_MENU)
