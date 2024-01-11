@@ -18,9 +18,15 @@ class CustomEvents:
 class GameLoop:
     game: Any
     initialized: bool = field(init=False, default=False)
+    linked_game_state: GameState = field(init=False, default=None)
+    presets: dict = field(init=False, default_factory=dict)
 
     def reset(self):
         self.initialized = False
+        self.presets.clear()
+
+    def set_presets(self, presets):
+        self.presets = presets
 
     def start(self):
         """
@@ -51,8 +57,8 @@ class GameLoop:
         self.update()
 
     # Методы для удобства
-    def set_state(self, new_state: GameState):
-        self.game.state_machine.set_state(new_state)
+    def set_state(self, new_state: GameState, **kwargs):
+        self.game.state_machine.set_state(new_state, **kwargs)
 
     @property
     def state(self) -> GameState:
@@ -96,6 +102,8 @@ class GameLoop:
 
 
 class MainMenuLoop(GameLoop):
+    linked_game_state = GameState.MAIN_MENU
+
     def __init__(self, game):
         super().__init__(game)
         self.play_btn = None
@@ -139,6 +147,8 @@ class MainMenuLoop(GameLoop):
 
 
 class MainGameLoop(GameLoop):
+    linked_game_state = GameState.MAIN_LEVEL_PLAYING
+
     def __init__(self, game):
         super().__init__(game)
         self.difficulty = 0
@@ -186,7 +196,7 @@ class MainGameLoop(GameLoop):
             self.heart_sprites.pop().kill()
 
             if self.health == 0:
-                self.set_state(GameState.GAME_OVER)
+                self.set_state(GameState.GAME_OVER, score=self.score)
 
         if pygame.sprite.spritecollide(self.player, self.bullet_booster_sprites, True, pygame.sprite.collide_mask):
             self.bullets += 1
@@ -214,8 +224,9 @@ class MainGameLoop(GameLoop):
                 x=self.player.rect.centerx + 80, y=self.player.rect.centery - 23,
                 birds_sprite_group=self.birds_sprites
             )
+
         elif event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
-            self.set_state(GameState.PAUSE_MENU)
+            self.set_state(GameState.PAUSE_MENU, sprites=self.all_sprites)
 
         elif event.type == CustomEvents.OBSTACLE_SPAWN:
             if random.randint(0, 100) <= 10:
@@ -225,7 +236,7 @@ class MainGameLoop(GameLoop):
                     x=self.width, y=540,
                     move_speed=max(self.difficulty // 10, 5)
                 )
-            elif random.randint(0, 100) <= 5:
+            elif random.randint(0, 100) <= 1:
                 from Sprites import HealthBoosterSprite
                 HealthBoosterSprite(
                     self.all_sprites, self.health_booster_sprites,
@@ -257,10 +268,13 @@ class MainGameLoop(GameLoop):
 
 
 class GameOver(GameLoop):
+    linked_game_state = GameState.GAME_OVER
+
     def __init__(self, game):
         super().__init__(game)
         self.main_menu_btn = None
         self.restart_btn = None
+        self.font = None
 
     def start(self):
         import Sprites
@@ -272,8 +286,13 @@ class GameOver(GameLoop):
         self.restart_btn = Sprites.RestartButton(self.all_sprites, x=670, y=300)
         self.main_menu_btn = Sprites.ReturnToMainMenuButton(self.all_sprites, x=270, y=300)
 
-    def update(self):
         self.all_sprites.draw(self.screen)
+
+        self.font = pygame.font.Font(None, 70)
+        score_text = self.font.render(f'{self.presets["score"]}', True, '#086972')
+        self.screen.blit(score_text, (800, 198))
+
+    def update(self):
         pygame.display.flip()
 
     def handle_event(self, event):
@@ -288,6 +307,8 @@ class GameOver(GameLoop):
 
 
 class PauseMenu(GameLoop):
+    linked_game_state = GameState.PAUSE_MENU
+
     def __init__(self, game):
         super().__init__(game)
         self.continuation_btn = None

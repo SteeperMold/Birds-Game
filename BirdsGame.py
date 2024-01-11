@@ -45,8 +45,9 @@ class BirdsGame:
         self.game_over = GameLoops.GameOver(game=self)
         self.pause_menu = GameLoops.PauseMenu(game=self)
 
-        self.state_machine = StateMachine(self.main_menu, self.main_level, self.game_over, self.pause_menu,
-                                          GameState.INITIALIZING)
+        game_loops = [self.main_menu, self.main_level, self.game_over, self.pause_menu]
+
+        self.state_machine = StateMachine(game_loops, GameState.INITIALIZING)
 
         pygame.init()
         window_style = pygame.FULLSCREEN if self.fullscreen else 0

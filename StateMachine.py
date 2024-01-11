@@ -1,6 +1,6 @@
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Set, Any
+from typing import Any, List, Set
 
 
 class GameState(Enum):
@@ -25,23 +25,20 @@ class StateError(Exception):
 
 @dataclass
 class StateMachine:
-    main_menu_loop: Any
-    main_game_loop: Any
-    game_over_loop: Any
-    pause_menu_loop: Any
+    game_loops: List[Any]
     state: GameState = field(default=GameState.UNKNOWN)
-    previous_states: Set[GameState] = field(init=False, default_factory=set)
+    previous_states: Set[GameState] = field(default_factory=set)
 
-    def set_state(self, new_state):
-        if new_state in self.previous_states:
-            if new_state == GameState.MAIN_MENU:
-                self.main_menu_loop.reset()
-            elif new_state == GameState.MAIN_LEVEL_PLAYING:
-                self.main_game_loop.reset()
-            elif new_state == GameState.GAME_OVER:
-                self.game_over_loop.reset()
-            elif new_state == GameState.PAUSE_MENU:
-                self.pause_menu_loop.reset()
+    def set_state(self, new_state, **kwargs):
+        for game_loop in self.game_loops:
+
+            for previous_state in self.previous_states:
+                if game_loop.linked_game_state == previous_state:
+                    game_loop.reset()
+
+            if game_loop.linked_game_state == new_state:
+                game_loop.set_presets(kwargs)
+
         self.state = new_state
         self.previous_states.add(new_state)
 
