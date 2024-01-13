@@ -1,6 +1,6 @@
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Any, List, Set
+from typing import Tuple, Set
 
 
 class GameState(Enum):
@@ -25,7 +25,7 @@ class StateError(Exception):
 
 @dataclass
 class StateMachine:
-    game_loops: List[Any]
+    game_loops: Tuple
     state: GameState = field(default=GameState.UNKNOWN)
     previous_states: Set[GameState] = field(default_factory=set)
 

@@ -1,3 +1,4 @@
+import sqlite3
 from dataclasses import dataclass, field
 from typing import Tuple
 
@@ -25,10 +26,7 @@ class BirdsGame:
     bullet_booster_sprites: pygame.sprite.Group = field(init=False, default=None)
     health_booster_sprites: pygame.sprite.Group = field(init=False, default=None)
 
-    main_menu: GameLoops.MainMenuLoop = field(init=False, default=None)
-    main_level: GameLoops.MainGameLoop = field(init=False, default=None)
-    game_over: GameLoops.GameOver = field(init=False, default=None)
-    pause_menu: GameLoops.PauseMenu = field(init=False, default=None)
+    game_loops: Tuple = field(init=False, default_factory=tuple)
 
     @classmethod
     def create(cls, fullscreen=False):
@@ -40,14 +38,31 @@ class BirdsGame:
         return game
 
     def init(self):
-        self.main_menu = GameLoops.MainMenuLoop(game=self)
-        self.main_level = GameLoops.MainGameLoop(game=self)
-        self.game_over = GameLoops.GameOver(game=self)
-        self.pause_menu = GameLoops.PauseMenu(game=self)
+        self.game_loops = (
+            GameLoops.MainMenuLoop(game=self),
+            GameLoops.MainGameLoop(game=self),
+            GameLoops.GameOver(game=self),
+            GameLoops.PauseMenu(game=self),
+            GameLoops.RecordsTableLoop(game=self),
+        )
 
-        game_loops = [self.main_menu, self.main_level, self.game_over, self.pause_menu]
+        self.state_machine = StateMachine(self.game_loops, GameState.INITIALIZING)
 
-        self.state_machine = StateMachine(game_loops, GameState.INITIALIZING)
+        connection = sqlite3.connect('leaderboard.sqlite')
+        cursor = connection.cursor()
+
+        cursor.execute("""
+        CREATE TABLE IF NOT EXISTS main_level (
+            score INTEGER
+        )""")
+
+        cursor.execute("""
+        CREATE TABLE IF NOT EXISTS im_a_bird_level (
+            score INTEGER
+        )""")
+
+        connection.commit()
+        connection.close()
 
         pygame.init()
         window_style = pygame.FULLSCREEN if self.fullscreen else 0
@@ -80,17 +95,8 @@ class BirdsGame:
 
     def loop(self):
         while self.state_machine.state != GameState.QUITTING:
-            if self.state_machine.state == GameState.MAIN_MENU:
-                self.main_menu.loop()
-            elif self.state_machine.state == GameState.MAIN_LEVEL_PLAYING:
-                self.main_level.loop()
-            elif self.state_machine.state == GameState.IM_A_BIRD_LEVEL_PLAYING:
-                pass
-            elif self.state_machine.state == GameState.RECORDS_TABLE_MENU:
-                pass
-            elif self.state_machine.state == GameState.GAME_OVER:
-                self.game_over.loop()
-            elif self.state_machine.state == GameState.PAUSE_MENU:
-                self.pause_menu.loop()
+            for game_loop in self.game_loops:
+                if game_loop.linked_game_state == self.state_machine.state:
+                    game_loop.loop()
 
         pygame.quit()

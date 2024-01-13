@@ -1,4 +1,5 @@
 import random
+import sqlite3
 from dataclasses import dataclass, field
 from typing import Any
 
@@ -28,17 +29,17 @@ class GameLoop:
     def set_presets(self, presets):
         self.presets = presets
 
-    def start(self):
+    def start(self) -> None:
         """
         Выполняет первоначальную настройку уровня, например инициализацию спрайтов.
         """
 
-    def update(self):
+    def update(self) -> None:
         """
         Вызывается каждый кадр.
         """
 
-    def handle_event(self, event):
+    def handle_event(self, event: pygame.event.Event) -> None:
         """
         Обрабатывает одиночный ивент.
         """
@@ -198,6 +199,12 @@ class MainGameLoop(GameLoop):
             if self.health == 0:
                 self.set_state(GameState.GAME_OVER, score=self.score)
 
+                connection = sqlite3.connect('leaderboard.sqlite')
+                cursor = connection.cursor()
+                cursor.execute('INSERT INTO main_level VALUES (?)', (self.score,))
+                connection.commit()
+                connection.close()
+
         if pygame.sprite.spritecollide(self.player, self.bullet_booster_sprites, True, pygame.sprite.collide_mask):
             self.bullets += 1
 
@@ -330,8 +337,71 @@ class PauseMenu(GameLoop):
         if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
             mouse_pos = pygame.mouse.get_pos()
 
-            if self.continuation_btn.rect.collidepoint(mouse_pos):
+            if (self.continuation_btn.rect.collidepoint(mouse_pos) or
+                    event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE):
                 pass
 
             elif self.main_menu_btn.rect.collidepoint(mouse_pos):
                 self.set_state(GameState.MAIN_MENU)
+
+
+class RecordsTableLoop(GameLoop):
+    linked_game_state = GameState.RECORDS_TABLE_MENU
+
+    def __init__(self, game):
+        super().__init__(game)
+        self.font = None
+
+    def start(self):
+        self.screen.fill('white')
+
+        self.all_sprites.empty()
+        from Sprites import MainMenuBackground
+        MainMenuBackground(self.all_sprites)
+
+        self.all_sprites.draw(self.screen)
+
+        self.font = pygame.font.Font(None, 70)
+
+        text = self.font.render('Ваши наилучшие результаты', True, '#086972')
+        self.screen.blit(text, ((self.width - text.get_width()) // 2, 20))
+
+        text = self.font.render('Основной уровень', True, '#086972')
+        self.screen.blit(text, (100, 100))
+
+        text = self.font.render('Я - птица', True, '#086972')
+        self.screen.blit(text, (830, 100))
+
+        connection = sqlite3.connect('leaderboard.sqlite')
+        cursor = connection.cursor()
+        main_level_records = cursor.execute('SELECT score FROM main_level ORDER BY score DESC').fetchmany(8)
+        im_a_bird_level_records = cursor.execute('SELECT score FROM im_a_bird_level ORDER BY score DESC').fetchmany(8)
+        connection.close()
+
+        if not main_level_records:
+            small_font = pygame.font.Font(None, 50)
+            text = small_font.render('Результатов пока нет...', True, '#086972')
+            self.screen.blit(text, (130, 230))
+            text = small_font.render('Никогда не поздно исправить!', True, '#086972')
+            self.screen.blit(text, (50, 300))
+
+        for i, score in enumerate(main_level_records, 1):
+            text = self.font.render(f'{i}. {score[0]}', True, '#086972')
+            self.screen.blit(text, (240, 130 + i * 60))
+
+        if not im_a_bird_level_records:
+            small_font = pygame.font.Font(None, 50)
+            text = small_font.render('Результатов пока нет...', True, '#086972')
+            self.screen.blit(text, (750, 230))
+            text = small_font.render('Никогда не поздно исправить!', True, '#086972')
+            self.screen.blit(text, (680, 300))
+
+        for i, score in enumerate(im_a_bird_level_records, 1):
+            text = self.font.render(f'{i}. {score[0]}', True, '#086972')
+            self.screen.blit(text, (870, 130 + i * 60))
+
+        pygame.display.flip()
+
+    def handle_event(self, event):
+        if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
+            self.set_state(GameState.MAIN_MENU)
