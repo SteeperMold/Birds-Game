@@ -25,6 +25,7 @@ class BirdsGame:
     birds_sprites: pygame.sprite.Group = field(init=False, default=None)
     bullet_booster_sprites: pygame.sprite.Group = field(init=False, default=None)
     health_booster_sprites: pygame.sprite.Group = field(init=False, default=None)
+    running_people_sprites: pygame.sprite.Group = field(init=False, default=None)
 
     game_loops: Tuple = field(init=False, default_factory=tuple)
 
@@ -44,6 +45,7 @@ class BirdsGame:
             GameLoops.GameOver(game=self),
             GameLoops.PauseMenu(game=self),
             GameLoops.RecordsTableLoop(game=self),
+            GameLoops.ImABirdLevelLoop(game=self),
         )
 
         self.state_machine = StateMachine(self.game_loops, GameState.INITIALIZING)
@@ -85,6 +87,7 @@ class BirdsGame:
         self.birds_sprites = pygame.sprite.Group()
         self.bullet_booster_sprites = pygame.sprite.Group()
         self.health_booster_sprites = pygame.sprite.Group()
+        self.running_people_sprites = pygame.sprite.Group()
 
         self.state_machine.set_state(GameState.INITIALIZED)
 

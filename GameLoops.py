@@ -13,6 +13,7 @@ class CustomEvents:
     ADD_SCORE = pygame.USEREVENT + 2
     OBSTACLE_SPAWN = pygame.USEREVENT + 3
     BIRD_SPAWN = pygame.USEREVENT + 4
+    RUNNING_PEOPLE_SPAWN = pygame.USEREVENT + 5
 
 
 @dataclass
@@ -72,6 +73,10 @@ class GameLoop:
     @property
     def obstacle_sprites(self) -> pygame.sprite.Group:
         return self.game.obstacle_sprites
+
+    @property
+    def running_people_sprites(self) -> pygame.sprite.Group:
+        return self.game.running_people_sprites
 
     @property
     def birds_sprites(self) -> pygame.sprite.Group:
@@ -343,6 +348,100 @@ class PauseMenu(GameLoop):
 
             elif self.main_menu_btn.rect.collidepoint(mouse_pos):
                 self.set_state(GameState.MAIN_MENU)
+
+
+class ImABirdLevelLoop(GameLoop):
+    linked_game_state = GameState.IM_A_BIRD_LEVEL_PLAYING
+
+    def __init__(self, game):
+        super().__init__(game)
+        self.difficulty = 0
+        self.health = 0
+        self.score = 0
+        self.player = None
+        self.heart_sprites = None
+        self.font = None
+        self.score_sprite = None
+        self.running_people = None
+
+    def start(self):
+        pygame.time.set_timer(CustomEvents.RUNNING_PEOPLE_SPAWN, 1500)
+        pygame.time.set_timer(CustomEvents.DIFFICULTY_CHANGE, 5000)
+
+        self.difficulty = 20
+        self.health = 1
+        self.score = 0
+        self.font = pygame.font.Font(None, 70)
+
+        self.all_sprites.empty()
+        from Sprites import GroundSprite, HeartSprite, ScoreSprite, AnimatedBirdToRightSprite
+        GroundSprite(self.all_sprites, x=0, y=550)
+        self.score_sprite = ScoreSprite(self.all_sprites, x=self.width - 100, y=10)
+        self.player = AnimatedBirdToRightSprite(self.all_sprites, x=100, y=220)
+        self.heart_sprites = [HeartSprite(self.all_sprites, x=20 + i * 100, y=10) for i in range(self.health)]
+
+    def update(self):
+        self.screen.fill("#88b0ed")
+        self.all_sprites.update()
+
+        score_text = self.font.render(f'{self.score}', True, '#ffe7bd')
+        self.screen.blit(score_text, (self.width - score_text.get_width() - 20, 20))
+        self.score_sprite.move(self.width, score_text.get_width())
+
+        if pygame.sprite.spritecollide(self.player, self.obstacle_sprites, True, pygame.sprite.collide_mask):
+            self.health -= 1
+            self.heart_sprites.pop().kill()
+
+            if self.health == 0:
+                self.set_state(GameState.GAME_OVER, score=self.score)
+
+        if pygame.sprite.spritecollide(self.player, self.running_people_sprites, True, pygame.sprite.collide_mask):
+            self.score += 1
+
+        self.all_sprites.draw(self.screen)
+
+        pygame.display.flip()
+        self.clock.tick(60)
+
+    def handle_event(self, event: pygame.event.Event):
+        keys = pygame.key.get_pressed()
+        if keys[pygame.K_UP]:
+            self.player.up()
+        elif keys[pygame.K_DOWN]:
+            self.player.down()
+
+        elif event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
+            self.set_state(GameState.PAUSE_MENU, sprites=self.all_sprites)
+
+        if event.type == CustomEvents.RUNNING_PEOPLE_SPAWN:
+            if random.randint(0, 100) < self.difficulty:
+                from Sprites import AnimatedRunningPlayerToLeftSprite, BulletToLeftSprite
+                AnimatedRunningPlayerToLeftSprite(
+                    self.all_sprites, self.running_people_sprites,
+                    x=self.width, y=320,
+                    move_speed=max(self.difficulty // 10, 5)
+                )
+                BulletToLeftSprite(
+                    self.all_sprites, self.obstacle_sprites,
+                    x=self.width, y=420,
+                    move_speed=max(self.difficulty // 10, 10)
+                )
+
+            elif random.randint(0, 100) < self.difficulty:
+                from Sprites import AnimatedJumpingPlayerToLeftSprite, BulletToLeftSprite
+                self.running_people = AnimatedJumpingPlayerToLeftSprite(
+                    self.all_sprites, self.running_people_sprites,
+                    x=self.width, y=320,
+                    move_speed=max(self.difficulty // 10, 5)
+                )
+                BulletToLeftSprite(
+                    self.all_sprites, self.obstacle_sprites,
+                    x=self.width, y=420,
+                    move_speed=max(self.difficulty // 10, 10)
+                )
+
+        elif event.type == CustomEvents.DIFFICULTY_CHANGE:
+            self.difficulty = min(self.difficulty + 1, 100)
 
 
 class RecordsTableLoop(GameLoop):
