@@ -71,6 +71,10 @@ class GameLoop:
         return self.game.all_sprites
 
     @property
+    def pause_menu(self) -> pygame.sprite.Group:
+        return self.game.pause_menu
+
+    @property
     def obstacle_sprites(self) -> pygame.sprite.Group:
         return self.game.obstacle_sprites
 
@@ -171,16 +175,9 @@ class MainGameLoop(GameLoop):
         pygame.time.set_timer(CustomEvents.BIRD_SPAWN, 1500)
         pygame.time.set_timer(CustomEvents.DIFFICULTY_CHANGE, 5000)
         pygame.time.set_timer(CustomEvents.ADD_SCORE, 1500)
-        print(self.player)
-        if self.presets:
-            for sprite in self.all_sprites:
-                print(sprite)
-            print()
-            print(self.all_sprites)
-            self.all_sprites.empty()
 
-            for sprite in self.presets['all_sprites']:
-                self.all_sprites.add(sprite)
+        if self.presets:
+            self.all_sprites.add(self.presets['all_sprites'])
             self.obstacle_sprites.add(self.presets['obstacle_sprites'])
             self.birds_sprites.add(self.presets['birds_sprites'])
             self.bullet_booster_sprites.add(self.presets['bullet_booster_sprites'])
@@ -356,14 +353,15 @@ class PauseMenu(GameLoop):
 
     def start(self):
         import Sprites
-        Sprites.PauseDarkBackground(self.all_sprites)
-        Sprites.PauseBackground(self.all_sprites, x=240, y=60)
+        Sprites.PauseDarkBackground(self.pause_menu)
+        Sprites.PauseBackground(self.pause_menu, x=240, y=60)
 
-        self.continuation_btn = Sprites.ContinuationButton(self.all_sprites, x=670, y=180)
-        self.main_menu_btn = Sprites.ReturnToMainMenuButton(self.all_sprites, x=270, y=180)
+        self.continuation_btn = Sprites.ContinuationButton(self.pause_menu, x=670, y=180)
+        self.main_menu_btn = Sprites.ReturnToMainMenuButton(self.pause_menu, x=270, y=180)
 
     def update(self):
         self.all_sprites.draw(self.screen)
+        self.pause_menu.draw(self.screen)
         pygame.display.flip()
 
     def handle_event(self, event):
@@ -372,10 +370,12 @@ class PauseMenu(GameLoop):
 
             if (self.continuation_btn.rect.collidepoint(mouse_pos) or
                     event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE):
+
                 if self.presets['level'] == 'main':
                     self.set_state(GameState.MAIN_LEVEL_PLAYING, **self.presets)
                 else:
                     self.set_state(GameState.IM_A_BIRD_LEVEL_PLAYING, **self.presets)
+
             elif self.main_menu_btn.rect.collidepoint(mouse_pos):
                 self.set_state(GameState.MAIN_MENU)
 
@@ -397,6 +397,16 @@ class ImABirdLevelLoop(GameLoop):
     def start(self):
         pygame.time.set_timer(CustomEvents.ENEMY_SPAWN, 1500)
         pygame.time.set_timer(CustomEvents.DIFFICULTY_CHANGE, 5000)
+
+        if self.presets:
+            self.all_sprites.add(self.presets['all_sprites'])
+            self.enemies_sprites.add(self.presets['enemies_sprites'])
+
+            self.difficulty = self.presets['difficulty']
+            self.score = self.presets['score']
+            self.player = self.presets['player']
+
+            return
 
         self.difficulty = 20
         self.score = 0
@@ -425,6 +435,13 @@ class ImABirdLevelLoop(GameLoop):
 
         if pygame.sprite.spritecollide(self.player, self.obstacle_sprites, True, pygame.sprite.collide_mask):
             self.heart_sprite.kill()
+
+            connection = sqlite3.connect('leaderboard.sqlite')
+            cursor = connection.cursor()
+            cursor.execute('INSERT INTO im_a_bird_level VALUES (?)', (self.score,))
+            connection.commit()
+            connection.close()
+
             self.set_state(GameState.GAME_OVER, score=self.score)
 
         if pygame.sprite.spritecollide(self.player, self.enemies_sprites, True, pygame.sprite.collide_mask):
@@ -441,7 +458,8 @@ class ImABirdLevelLoop(GameLoop):
             self.pressed_key = None
 
         elif event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
-            self.set_state(GameState.PAUSE_MENU, sprites=self.all_sprites)
+            self.set_state(GameState.PAUSE_MENU, all_sprites=self.all_sprites, enemies_sprites=self.enemies_sprites,
+                           score=self.score, difficulty=self.difficulty, player=self.player, level='bird')
 
         if event.type == CustomEvents.ENEMY_SPAWN:
             if random.randint(0, 100) < self.difficulty:
