@@ -280,6 +280,20 @@ class EnemyBulletSprite(BaseSprite):
             self.kill()
 
 
+class EnemyOnPlaneSprite(BaseSprite):
+    image = load_image("plane.png")
+    apply_mask = True
+
+    def __init__(self, *group, x=0, y=0, move_speed=5):
+        super().__init__(*group, x=x, y=y)
+        self.move_speed = move_speed
+
+    def update(self):
+        self.rect.x -= self.move_speed
+        if self.rect.x < -self.rect.w:
+            self.kill()
+
+
 class PlayButton(BaseSprite):
     image = load_image("play_btn.png")
 

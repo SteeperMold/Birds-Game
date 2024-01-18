@@ -442,7 +442,7 @@ class ImABirdLevelLoop(GameLoop):
             connection.commit()
             connection.close()
 
-            self.set_state(GameState.GAME_OVER, score=self.score)
+            self.set_state(GameState.GAME_OVER, score=self.score, level='bird')
 
         if pygame.sprite.spritecollide(self.player, self.enemies_sprites, True, pygame.sprite.collide_mask):
             self.score += 1
@@ -472,6 +472,17 @@ class ImABirdLevelLoop(GameLoop):
                 EnemyBulletSprite(
                     self.all_sprites, self.obstacle_sprites,
                     x=self.width, y=420,
+                )
+            elif random.randint(0, 100) < self.difficulty:
+                from Sprites import EnemyOnPlaneSprite, EnemyBulletSprite
+                EnemyOnPlaneSprite(
+                    self.all_sprites, self.enemies_sprites,
+                    x=self.width, y=100,
+                    move_speed=max(self.difficulty // 10, 5),
+                )
+                EnemyBulletSprite(
+                    self.all_sprites, self.obstacle_sprites,
+                    x=self.width, y=180,
                 )
 
         elif event.type == CustomEvents.DIFFICULTY_CHANGE:
