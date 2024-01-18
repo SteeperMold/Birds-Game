@@ -2,6 +2,7 @@ import os
 import sys
 
 import pygame
+import random
 
 
 def load_image(name, color_key=None):
@@ -206,25 +207,7 @@ class AnimatedPlayerSprite(BaseAnimatedSprite):
         self.mask = pygame.mask.from_surface(self.image)
 
 
-class AnimatedRunningPlayerToLeftSprite(BaseAnimatedSprite):
-    sheet = load_image("animated_player_to_left.png")
-    columns = 4
-    rows = 1
-    animation_speed = 20
-    apply_mask = True
-
-    def __init__(self, *group, x=0, y=0, move_speed=5):
-        super().__init__(*group, x=x, y=y)
-        self.move_speed = move_speed
-
-    def update(self):
-        super().update()
-        self.rect.x -= self.move_speed
-        if self.rect.x < -self.rect.w:
-            self.kill()
-
-
-class AnimatedJumpingPlayerToLeftSprite(AnimatedPlayerSprite):
+class EnemySprite(BaseAnimatedSprite):
     sheet = load_image("animated_player_to_left.png")
     columns = 4
     rows = 1
@@ -238,15 +221,18 @@ class AnimatedJumpingPlayerToLeftSprite(AnimatedPlayerSprite):
         self.is_jumping = False
         self.jump_frames = 25
 
+    def jump(self):
+        self.is_jumping = True
+        self.image = self.frames[0]
+        self.mask = pygame.mask.from_surface(self.image)
+
     def update(self):
         self.rect.x -= self.move_speed
         if self.rect.x < -self.rect.w:
             self.kill()
 
-        if self.rect.x == 1000:
-            self.is_jumping = True
-            self.image = self.frames[0]
-            self.mask = pygame.mask.from_surface(self.image)
+        if self.rect.x >= 500 and random.randint(0, 100) <= 1:
+            self.jump()
 
         if not self.is_jumping:
             super().update()
@@ -260,7 +246,7 @@ class AnimatedJumpingPlayerToLeftSprite(AnimatedPlayerSprite):
             self.is_jumping = False
 
 
-class AnimatedBirdToRightSprite(BaseAnimatedSprite):
+class PlayableBird(BaseAnimatedSprite):
     sheet = load_image("bird_animation_to_right.png")
     columns = 2
     rows = 1
@@ -284,17 +270,12 @@ class AnimatedBirdToRightSprite(BaseAnimatedSprite):
             self.mask = pygame.mask.from_surface(self.image)
 
 
-class BulletToLeftSprite(BaseSprite):
+class EnemyBulletSprite(BaseSprite):
     image = load_image("bullet_to_left.png")
     apply_mask = True
 
-    def __init__(self, *group, x=0, y=0, move_speed=10):
-        super().__init__(*group, x=x, y=y)
-        self.move_speed = move_speed
-
     def update(self):
-
-        self.rect.x -= self.move_speed
+        self.rect.x -= 10
         if self.rect.x < -self.rect.w:
             self.kill()
 
